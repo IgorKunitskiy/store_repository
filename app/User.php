@@ -10,6 +10,11 @@ class User extends Authenticatable
 {
     use Notifiable;
 
+    const ROLES = [
+        'customer' => 'customer',
+        'admin' => 'admin',
+    ];
+
     /**
      * The attributes that are mass assignable.
      *
