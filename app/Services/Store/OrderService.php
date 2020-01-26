@@ -3,6 +3,8 @@
 namespace App\Services\Store;
 
 use App\Models\Order;
+use App\Notifications\OrderStatusChanged;
+use Illuminate\Http\Response;
 
 class OrderService
 {
@@ -37,5 +39,36 @@ class OrderService
                 'page',
                 $page
             );
+    }
+
+    /**
+     * This function changes order Status
+     *
+     * @param int    $orderId  The id of order
+     * @param string $status   New status name
+     *
+     * @return \App\Models\Order
+     */
+    public function changeStatus(
+        $orderId,
+        $status
+    ) {
+        $order = $this->order->with('user')->findOrFail($orderId);
+
+        if ($order->status == $status) {
+            abort(response()->json([
+                'status' => 'Following status already exists.'
+            ], Response::HTTP_UNPROCESSABLE_ENTITY));
+        }
+
+        $order->status = $status;
+        $order->save();
+
+        $order->user->notify(new OrderStatusChanged(
+            $order->user,
+            $order
+        ));
+
+        return $order;
     }
 }

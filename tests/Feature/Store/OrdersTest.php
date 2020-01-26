@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Http\Response;
 use Tests\TestCase;
 use Illuminate\Support\Str;
-
+use Illuminate\Support\Facades\Notification;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\Product;
+use App\Notifications\OrderStatusChanged;
 
 class OrdersTest extends TestCase
 {
@@ -60,11 +62,6 @@ class OrdersTest extends TestCase
         $this->be($this->user, 'api');
     }
 
-    /**
-     * A basic test example.
-     *
-     * @return void
-     */
     public function testIndexOrdersTest()
     {
         $products = factory(Product::class, 30)->create();
@@ -79,7 +76,58 @@ class OrdersTest extends TestCase
             'items' => 15,
         ]);
 
-        $response->assertStatus(200);
+        $response->assertStatus(Response::HTTP_OK);
         $response->assertJsonStructure($this->jsonStructure);
+    }
+
+    public function testChangeOrderStatusTest()
+    {
+        Notification::fake();
+        $order = factory(Order::class)->create([
+            'status' => Order::STATUSES['pending'],
+        ]);
+
+        $response = $this->put("api/orders/{$order->id}", [
+            'status' => Order::STATUSES['done'],
+        ]);
+
+        $response->assertStatus(Response::HTTP_OK);
+        $response->assertJsonStructure([
+            'success',
+            'message',
+        ]);
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => Order::STATUSES['done'],
+        ]);
+
+        Notification::assertSentTo($this->user, OrderStatusChanged::class);
+    }
+
+    public function testChangeOrderStatusIncorrectStatusTest()
+    {
+        $order = factory(Order::class)->create([
+            'status' => Order::STATUSES['pending'],
+        ]);
+
+        $response = $this->put("api/orders/{$order->id}", [
+            'status' => Order::STATUSES['done']."dummy",
+        ]);
+
+        $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
+
+    public function testChangeOrderStatusExistedStatusTest()
+    {
+        $order = factory(Order::class)->create([
+            'status' => Order::STATUSES['pending'],
+        ]);
+
+        $response = $this->put("api/orders/{$order->id}", [
+            'status' => Order::STATUSES['pending'],
+        ]);
+
+        $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Response;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -61,6 +62,9 @@ class Handler extends ExceptionHandler
         }elseif ($e instanceof AuthorizationException) {
             $status = Response::HTTP_FORBIDDEN;
             $e = new AuthorizationException('HTTP_FORBIDDEN', $status);
+        }elseif ($e instanceof ModelNotFoundException) {
+            $status = Response::HTTP_NOT_FOUND;
+            $e = new AuthorizationException('Model not found', $status);
         }elseif($e instanceof  UnauthorizedException){
             $status = Response::HTTP_FORBIDDEN;
             $e = new AuthorizationException('HTTP_FORBIDDEN', $status);

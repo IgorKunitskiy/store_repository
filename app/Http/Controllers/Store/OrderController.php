@@ -33,7 +33,10 @@ class OrderController extends Controller
     /**
      * Get all orders
      *
+     * @param Request $request The Request instance
+     *
      * @return Illuminate\Http\JsonResponse
+     * @throws ValidationException
      */
     public function index (Request $request)
     {
@@ -69,5 +72,35 @@ class OrderController extends Controller
         $response = $this->fractal->createData($resource)->toArray();
 
         return response()->json($response);
+    }
+
+    /**
+     * This function changes order status status
+     *
+     * @param Request $request The Request instance
+     * @param int     $orderId The id of order
+     *
+     * @return \Illuminate\Http\JsonResponse
+     * @throws ValidationException
+     */
+    public function changeStatus(Request $request, $orderId)
+    {
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|in:'.implode(',', array_values( Order::STATUSES)),
+        ]);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
+
+        $order = $this->orderService->changeStatus(
+            $orderId,
+            $request->get('status')
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => "Order No:{$order->id} status has been changed",
+        ]);
     }
 }
