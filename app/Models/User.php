@@ -12,6 +12,18 @@ class User extends Authenticatable
     use Notifiable,
         SoftDeletes;
 
+    /**
+     * The League\Fractal User model resorce key
+     *
+     * @var string
+     */
+    const RESOURCE_KEY = 'users';
+
+    /**
+     * Available user roles
+     *
+     * @var array
+     */
     const ROLES = [
         'customer' => 'customer',
         'admin' => 'admin',

@@ -10,6 +10,13 @@ class Product extends Model
     use SoftDeletes;
 
     /**
+     * The League\Fractal Product model resorce key
+     *
+     * @var string
+     */
+    const RESOURCE_KEY = 'products';
+
+    /**
      * Products relation maping
      *
      * @return array of Order model instanses

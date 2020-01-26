@@ -10,7 +10,16 @@ class Order extends Model
     use SoftDeletes;
 
     /**
-     * @const STATUSES array of posible order status
+     * The League\Fractal model resorce key
+     *
+     * @var string
+     */
+    const RESOURCE_KEY = 'orders';
+
+    /**
+     * The array of available order status
+     *
+     * @var array
      */
     const STATUSES = [
         'pending' => 'pending',
@@ -29,7 +38,7 @@ class Order extends Model
     /**
      * Products relation maping
      *
-     * @return array of Product model instanses
+     * @return object of Product model instanses
      */
     public function products()
     {

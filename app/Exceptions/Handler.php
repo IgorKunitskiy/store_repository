@@ -4,6 +4,11 @@ namespace App\Exceptions;
 
 use Exception;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Response;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\UnauthorizedException;
 
 class Handler extends ExceptionHandler
 {
@@ -13,7 +18,9 @@ class Handler extends ExceptionHandler
      * @var array
      */
     protected $dontReport = [
-        //
+        AuthorizationException::class,
+        ValidationException::class,
+        UnauthorizedException::class,
     ];
 
     /**
@@ -44,8 +51,29 @@ class Handler extends ExceptionHandler
      * @param  \Exception  $exception
      * @return \Illuminate\Http\Response
      */
-    public function render($request, Exception $exception)
+    public function render($request, Exception $e)
     {
-        return parent::render($request, $exception);
+        $status = Response::HTTP_INTERNAL_SERVER_ERROR;
+        $errors = [];
+
+        if ($e instanceof HttpResponseException) {
+            $status = Response::HTTP_INTERNAL_SERVER_ERROR;
+        }elseif ($e instanceof AuthorizationException) {
+            $status = Response::HTTP_FORBIDDEN;
+            $e = new AuthorizationException('HTTP_FORBIDDEN', $status);
+        }elseif($e instanceof  UnauthorizedException){
+            $status = Response::HTTP_FORBIDDEN;
+            $e = new AuthorizationException('HTTP_FORBIDDEN', $status);
+        }else if ($e instanceof ValidationException) {
+            $status = Response::HTTP_UNPROCESSABLE_ENTITY;
+            $errors = $e->errors();
+        }
+
+        return response()->json([
+            'success' => false,
+            'status' => $status,
+            'message' => $e->getMessage(),
+            'errors' => $errors,
+        ], $status);
     }
 }
