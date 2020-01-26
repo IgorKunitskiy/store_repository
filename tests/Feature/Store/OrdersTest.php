@@ -80,6 +80,25 @@ class OrdersTest extends TestCase
         $response->assertJsonStructure($this->jsonStructure);
     }
 
+    public function testCustomerCanIndexOrdersTest()
+    {
+        $this->user->role = User::ROLES['customer'];
+        $this->user->save();
+        $products = factory(Product::class, 30)->create();
+
+        factory(Order::class, 30)->create()
+            ->each(function(Order $order) use ($products) {
+                $order->products()->saveMany($products->random(rand(1, 5)));
+            });
+
+        $response = $this->json('GET', 'api/orders', [
+            'page' => 2,
+            'items' => 15,
+        ]);
+
+        $response->assertStatus(Response::HTTP_OK);
+    }
+
     public function testChangeOrderStatusTest()
     {
         Notification::fake();
@@ -129,5 +148,30 @@ class OrdersTest extends TestCase
         ]);
 
         $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
+
+
+    public function testAdminCanChangeOrderStatusExistedStatusTest()
+    {
+        $order = factory(Order::class)->create([
+            'status' => Order::STATUSES['pending'],
+        ]);
+
+        $response = $this->put("api/orders/{$order->id}", [
+            'status' => Order::STATUSES['pending'],
+        ]);
+
+        $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY);
+    }
+
+    public function testChangeOrderStatusNotPermittedTest()
+    {
+        $this->user->role = User::ROLES['customer'];
+        $this->user->save();
+        $response = $this->put("api/orders/1", [
+            'status' => Order::STATUSES['pending'],
+        ]);
+
+        $response->assertStatus(Response::HTTP_FORBIDDEN);
     }
 }

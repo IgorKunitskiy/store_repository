@@ -15,5 +15,5 @@ use Illuminate\Http\Request;
 
 Route::middleware('auth:api')->group(function () {
     Route::get('/orders', 'Store\OrderController@index');
-    Route::put('/orders/{orderId}', 'Store\OrderController@changeStatus');
+    Route::middleware('permitted')->put('/orders/{orderId}', 'Store\OrderController@changeStatus');
 });
